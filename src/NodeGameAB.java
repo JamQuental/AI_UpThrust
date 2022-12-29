@@ -2,9 +2,9 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class NodeGameAB {
-    private static int WIN = 1000000;
-    private static int LOSS = -1000000;
+public abstract class NodeGameAB {
+    public static int WIN = 1000000;
+    public static int LOSS = -1000000;
     private static int TIMELIMIT = 5;
     private static int turn;
     private static int maxLevel;
@@ -64,11 +64,11 @@ public class NodeGameAB {
 
     public double maxValue(double alfa, double beta){
         if(lvl >= maxLevel || getSeconds() > TIMELIMIT){
-            return getH();
+            return getHeuristic();
         }
         ArrayList<Move> successor = expandAB();
         if(successor.size() == 0){
-            return getH();
+            return getHeuristic();
         }
         for(Move move : successor){
             double min = move.getState().minValue(alfa, beta);
@@ -83,11 +83,11 @@ public class NodeGameAB {
     }
     public double minValue(double alfa, double beta){
         if(lvl >= maxLevel || getSeconds() > TIMELIMIT){
-            return getH();
+            return getHeuristic();
         }
         ArrayList<Move> successor = expandAB();
         if(successor.size() == 0){
-            return getH();
+            return getHeuristic();
         }
         for(Move move: successor){
             double max = move.getState().maxValue(alfa, beta);

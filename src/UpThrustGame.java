@@ -49,6 +49,16 @@ public class UpThrustGame extends NodeGameAB{
         return true;
     }
 
+    @Override
+    public String toString() {
+       for(int i = 0; i < gameMatrix.length; i++){
+           System.out.println(Arrays.toString(gameMatrix[i]));
+       }
+       return "\n";
+    }
+
+
+
     public boolean color(int lineColorPos, int colorPos, String color){
         if(lineColorPos >= 5){
             for(int i = 0; i < gameMatrix[lineColorPos].length; i++){
@@ -78,7 +88,88 @@ public class UpThrustGame extends NodeGameAB{
         }
         return numberOfJumps;
     }
+    @Override
+    public ArrayList<Move> expandAB() {
+        ArrayList<Move> possibleMoves = new ArrayList<>();
+        for (int i = 0; i < gameMatrix.length; i++) {
+            int num = numberOfJumps(gameMatrix[i]);
+            for (int k = 0; k < gameMatrix[i].length; k++) {
+                if ((isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("1"))
+                        || (isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("3"))) {
+                    if (i - num >= 0 && gameMatrix[i - num][k].equalsIgnoreCase("0")
+                            && biggestPosition(i, k, gameMatrix[i][k])) {// esqueci me de contar quantos estavam na
+                        // linha: Funciona
 
+                        String[][] tempArray = copy(gameMatrix);
+                        String temp = tempArray[i - num][k];
+                        tempArray[i - num][k] = tempArray[i][k];
+                        tempArray[i][k] = temp;
+
+                        if (color(i - num, k, tempArray[i - num][k])) {
+                            printMatrix(tempArray);
+                            possibleMoves.add(new Move("" + (k+1) + " " +gameMatrix[i][k], new UpThrustGame(tempArray)));
+                        }
+                    }
+                }
+                if ((!isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("2"))
+                        || (!isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("4"))) {
+                    if (i - num >= 0 && gameMatrix[i - num][k].equalsIgnoreCase("0")
+                            && biggestPosition(i, k, gameMatrix[i][k])) {
+
+                        String[][] tempArray = copy(gameMatrix);
+                        String temp = tempArray[i - num][k];
+                        tempArray[i - num][k] = tempArray[i][k];
+                        tempArray[i][k] = temp;
+
+                        if (color(i - num, k, tempArray[i - num][k])) {
+                            possibleMoves.add(new Move("" + (k+1) + " " +gameMatrix[i][k], new UpThrustGame(tempArray)));
+                            printMatrix(tempArray);
+                        }
+                    }
+                }
+            }
+        }
+        return possibleMoves;
+    }
+
+    @Override
+    public double getHeuristic() {
+        if (gameMatrix == null)
+            return 0;
+        double heuristic = 0;
+        for (int l = 0; l < gameMatrix.length; l++) {
+            for (int c = 0; c < gameMatrix[l].length; c++) {
+                if (gameMatrix[l][c].equals("0"))
+                    continue;
+                int v = Math.max(Math.abs(l - 3), Math.abs(c - 3));
+                if (gameMatrix[l][c].equals(Integer.toString(getTurn())))
+                    heuristic += 9 - v;
+                else
+                    heuristic -= 9 - v;
+            }
+        }
+        // testar final de jogo
+        int n = 0;
+        for (int l = 0; l < gameMatrix.length; l++) {
+            for (int c = 0; c <  gameMatrix[l].length; c++) {
+                if (gameMatrix[l][c].equals(Integer.toString(getTurn())))
+                    n++;
+            }
+        }
+        if (n == 8)
+            return WIN;
+        n = 0;
+        for (int l = 0; l < gameMatrix.length; l++) {
+            for (int c = 0; c < gameMatrix[l].length; c++) {
+                if (gameMatrix[l][c].equals(Integer.toString(3-getTurn())))
+                    n++;
+            }
+        }
+        if (n == 8)
+            return LOSS;
+
+        return heuristic;
+    }
 
     public ArrayList<UpThrustGame> successor(){
         ArrayList<UpThrustGame> possibleSuccessors = new ArrayList<>();
@@ -97,7 +188,7 @@ public class UpThrustGame extends NodeGameAB{
                         tempArray[i][k] = temp;
                         //printMatrizInv(tempArray);
                         if (color(i - n, k, tempArray[i - n][k])) {// simples erro de logica: corrigido
-                            printMatrizInv(tempArray);
+                            printMatrix(tempArray);
                             possibleSuccessors.add(new UpThrustGame(tempArray));
                         }
                         //para fazer todos verificar antes se está ou não ativo;
