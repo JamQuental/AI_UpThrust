@@ -103,9 +103,8 @@ public class NodeGameAB {
 
 
 
-     //public abstract ArrayList<Move> expandAB();
-
-    //public abstract double getH();
+     public abstract ArrayList<Move> expandAB();
+    public abstract double getHeuristic();
 
 
 
