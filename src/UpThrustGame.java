@@ -61,7 +61,7 @@ public class UpThrustGame extends NodeGameAB {
         int[][] copy = copy(board);
         copy[newRowIdx(pawnRow, moveAmount)][pawnColumn] = copy[pawnRow][pawnColumn];
         copy[pawnRow][pawnColumn] = EMPTY_TILE;
-        return new UpThrustGame(copy, COLOR_OFFSET - myColor, getLvl() + 1);
+        return new UpThrustGame(copy, /*COLOR_OFFSET -*/ myColor, getLvl() + 1);
     }
 
     private int numberOfPawnsInRow(int pawnRow) {
@@ -112,8 +112,8 @@ public class UpThrustGame extends NodeGameAB {
                 if (pawnColor == EMPTY_TILE) continue;
                 int moveAmount = numberOfPawnsInRow(row);
                 if ((pawnColor == myColor || pawnColor == myOtherColor()) && isValidMove(row, column, moveAmount)) {
-                    //String action = pawnColor + " " + (row + 1) + " " + (column + 1);
-                    String action = (column + 1) + " " + pawnColor;
+                    String action = pawnColor + " " + (row + 1) + " " + (column + 1);
+                    //String action = (column + 1) + " " + pawnColor;
                     UpThrustGame game = copyWithMove(row, column, moveAmount);
                     result.add(new Move(action, game));
                 }

@@ -96,7 +96,7 @@ public class UpThrustAnswer implements Runnable {
     // thread que corre em paralelo com o resto do programa
     public void run() {
         try {
-            s = new Socket("10.180.5.81", porta);
+            s = new Socket("127.0.0.1", porta);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.out.println("Impossível abrir socket");
