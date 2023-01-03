@@ -1,180 +1,137 @@
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.swing.JTextField;
+
+
 public abstract class NodeGameAB {
-    public static int WIN = 1000000;
-    public static int LOSS = -1000000;
-    private static int TIMELIMIT = 5;
     private static int turn;
-    private static int maxLevel;
-    private int lvl;
-    private Move bestMove;
-    private static Date moveTime;
+    private static int maxDepth;
+    private static int LIMIT_TIME = 5;
+    public static int VICTORY = 1000000;
+    public static int DEFEAT = -1000000;
 
-    public NodeGameAB(int lvl) {
-        this.lvl = lvl;
+    private Move bestMove = null;
+    private static Date startTime;
+
+    private int depth;
+
+    public NodeGameAB( int depth) {
+        this.depth = depth;
     }
 
-    public int getSeconds(){
-        return (int)(new Date().getTime() - moveTime.getTime())/1000;
-    }
+//    public abstract String getMove();
 
-    public String processAB(JTextField tf){
-        ArrayList<Move> successor = expandAB();
-        double biggest = LOSS-1;
-        bestMove = null;
-        maxLevel = 5;
-        moveTime = new Date();
-        while(getSeconds() < TIMELIMIT && maxLevel < 50 && biggest < WIN) {
-            Move temporaryBestMove = null;
-            biggest = LOSS - 1;
-            for (Move move : successor) {
-                double min = move.getState().minValue(-99999999, 99999999);
-                if (min > biggest || (min == biggest && Math.random() > 0.5)) {
-                    biggest = min;
-                    temporaryBestMove = move;
-                    if (tf != null) {
-                        tf.setText("Nível:" + maxLevel + "  " + getSeconds() + "s  " + biggest + " : " + temporaryBestMove.getAction());
-                    } else {
-                        System.out.println("Nível:" + maxLevel + "  " + getSeconds() + "s  " + biggest + " : " + temporaryBestMove.getAction());
-                    }
-                }
-                maxLevel++;
-                if (temporaryBestMove != null) {
-                    bestMove = temporaryBestMove;
-                    if (tf != null) {
-                        tf.setText("Nivel:" + maxLevel + "  " + getSeconds() + "s  " + biggest + " : " + bestMove.getAction());
-                    } else {
-                        System.out.println("Nivel:" + maxLevel + "  " + getSeconds() + "s  " + biggest + " : " + bestMove.getAction());
-                    }
-                }
-                tf.repaint();
-            }
-        }
-            if(bestMove != null){
-                return bestMove.getAction();
-            }
-            else{
-                return "passo";
-            }
+    public abstract ArrayList<Move> expandAB();
 
-    }
+    public abstract double getH();
 
-
-    public double maxValue(double alfa, double beta){
-        if(lvl >= maxLevel || getSeconds() > TIMELIMIT){
-            return getHeuristic();
-        }
-        ArrayList<Move> successor = expandAB();
-        if(successor.size() == 0){
-            return getHeuristic();
-        }
-        for(Move move : successor){
-            double min = move.getState().minValue(alfa, beta);
-            if(min > alfa){
-                alfa = min;
-            }
-            if( alfa >= beta){
-                return beta;
-            }
-        }
-        return alfa;
-    }
-    public double minValue(double alfa, double beta){
-        if(lvl >= maxLevel || getSeconds() > TIMELIMIT){
-            return getHeuristic();
-        }
-        ArrayList<Move> successor = expandAB();
-        if(successor.size() == 0){
-            return getHeuristic();
-        }
-        for(Move move: successor){
-            double max = move.getState().maxValue(alfa, beta);
-            if(max < beta){
-                beta = max;
-            }
-            if(beta <= alfa){
-                return alfa;
-            }
-        }
-        return beta;
-    }
-
-
-
-     public abstract ArrayList<Move> expandAB();
-    public abstract double getHeuristic();
-
-
-
-    public static int getTurn() {
-        return turn;
-    }
-
-    public static void setTurn(String turnInString) {
-        int turn = 0;
-        try{
-            turn = Integer.parseInt(turnInString);
-        }
-        catch ( Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public static int getWIN() {
-        return WIN;
-    }
-
-    public static void setWIN(int WIN) {
-        NodeGameAB.WIN = WIN;
-    }
-
-    public static int getLOSS() {
-        return LOSS;
-    }
-
-    public static void setLOSS(int LOSS) {
-        NodeGameAB.LOSS = LOSS;
-    }
-
-    public static int getTIMELIMIT() {
-        return TIMELIMIT;
-    }
-
-    public static void setTIMELIMIT(int TIMELIMIT) {
-        NodeGameAB.TIMELIMIT = TIMELIMIT;
-    }
-
-    public static int getMaxLevel() {
-        return maxLevel;
-    }
-
-    public static void setMaxLevel(int maxLevel) {
-        NodeGameAB.maxLevel = maxLevel;
-    }
-
-    public int getLvl() {
-        return lvl;
-    }
-
-    public void setLvl(int lvl) {
-        this.lvl = lvl;
+    public static int getMaxDepth() {
+        return maxDepth;
     }
 
     public Move getBestMove() {
         return bestMove;
     }
 
-    public void setBestMove(Move bestMove) {
-        this.bestMove = bestMove;
+    public int getDepth() {
+        return depth;
     }
 
-    public static Date getMoveTime() {
-        return moveTime;
+    protected static void setTurn( String st) {
+        turn = 0;
+        try {
+            turn = Integer.parseInt(st);
+        }
+        catch ( Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
-    public static void setMoveTime(Date moveTime) {
-        NodeGameAB.moveTime = moveTime;
+    protected static int getTurn() {
+        return turn;
     }
+
+
+// --------------------------------------------------
+
+
+    public int getSeconds() {
+        return (int)(new Date().getTime()-startTime.getTime())/1000;
+    }
+
+    public String processAB( JTextField tf) {
+        ArrayList<Move> suc = expandAB();
+        double largest = DEFEAT - 1;
+        bestMove = null;
+        maxDepth = 5;       // no mínimo...
+        startTime = new Date();
+        while (getSeconds() < LIMIT_TIME && maxDepth < 50 && largest < VICTORY) {
+            Move bestOfDepth = null;
+            largest = DEFEAT - 1;
+            for (Move candidate : suc) {
+                double vMin = candidate.getState().minValue( -99999999, 99999999);
+                if (vMin > largest || (vMin == largest && maybe())) {
+                    largest = vMin;
+                    bestOfDepth = candidate;
+                    if (tf != null)
+                        tf.setText("Depth:"+maxDepth+"  "+getSeconds()+"s  "+largest+" : "+bestOfDepth.getAction());
+                    else
+                        System.out.println("Depth:"+maxDepth+"  "+getSeconds()+"s  "+largest+" : "+bestOfDepth.getAction());
+                }
+            }
+            maxDepth++;
+            if (bestOfDepth != null) {
+                bestMove = bestOfDepth;
+                if (tf != null)
+                    tf.setText("Depth:"+maxDepth+"  "+getSeconds()+"s  "+largest+" : "+bestMove.getAction());
+                else
+                    System.out.println("Depth:"+maxDepth+"  "+getSeconds()+"s  "+largest+" : "+bestMove.getAction());
+            }
+            tf.repaint();
+        }
+        if (bestMove != null)
+            return bestMove.getAction();
+        else
+            return "passo";
+    }
+
+    public double maxValue( double alfa, double beta) {
+        if (depth >= maxDepth || getSeconds() > LIMIT_TIME)
+            return getH();
+        ArrayList<Move> suc = expandAB();
+        if (suc.size() == 0)
+            return getH();
+        for (Move cand : suc) {
+            double vMin = cand.getState().minValue( alfa, beta);
+            if (vMin > alfa) {
+                alfa = vMin;
+            }
+            if (alfa >= beta)
+                return beta;
+        }
+        return alfa;
+    }
+
+    public double minValue( double alfa, double beta) {
+        if (depth >= maxDepth || getSeconds() > LIMIT_TIME)
+            return getH();
+        ArrayList<Move> suc = expandAB();
+        if (suc.size() == 0)
+            return getH();
+        for (Move cand : suc) {
+            double vMax = cand.getState().maxValue( alfa, beta);
+            if (vMax < beta) {
+                beta = vMax;
+            }
+            if (beta <= alfa)
+                return alfa;
+        }
+        return beta;
+    }
+
+    private boolean maybe() {
+        return Math.random() > 0.5;
+    }
+
 }

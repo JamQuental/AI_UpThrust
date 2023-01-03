@@ -112,6 +112,7 @@ public class UpThrustAnswer implements Runnable {
         }
         ;
         System.out.println("Start run");
+        // em princ�pio corre sem parar
         while (run) {
             String st = null;
             try {
@@ -194,8 +195,8 @@ public class UpThrustAnswer implements Runnable {
      * @param args
      */
     public static void main(String[] args) {
-        UpThrustAnswer answer = new UpThrustAnswer();
-        answer.inicia();
+        UpThrustAnswer r = new UpThrustAnswer();
+        r.inicia();
 
     }
 
