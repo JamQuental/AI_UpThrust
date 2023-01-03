@@ -1,148 +1,139 @@
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
-public class UpThrustGame extends NodeGameAB{
-    String[][] gameMatrix;
-    private boolean isPlayer1;
-    public UpThrustGame(String[][] gameMatrix) {
+public class UpThrustGame extends NodeGameAB {
+
+    public static final int BOARD_HEIGHT = 11;
+    public static final int BOARD_WIDTH = 4;
+    private static final int EMPTY_TILE = 0;
+    private static final int COLOR_OFFSET = 3;
+    private static final int NUMBER_OF_SCORING_ROWS = 5;
+    private int myColor;
+    private final int[][] board;
+
+    public UpThrustGame(String rawBoard) {
         super(1);
-        this.gameMatrix = gameMatrix;
-        if(getTurn() == 1){
-            isPlayer1 = true;
-        }
-        else{
-            isPlayer1 = false;
-        }
+        int[] values = getAllIntsFrom(rawBoard);
+        this.board = createAndFill2dArray(BOARD_HEIGHT, BOARD_WIDTH, values);
+        this.myColor = getTurn();
+        System.out.println(Arrays.deepToString(this.board));
     }
 
-    public void addNewState(UpThrustGame newState){
-        printMatrix(newState.gameMatrix);
+    public UpThrustGame(int[][] board, int myColor, int depth) {
+        super(depth);
+        this.board = board;
+        this.myColor = myColor;
     }
 
-    public String[][] copy(String[][] original){
-        String[][] newArr = new String[original.length][original[0].length];
-        for (int i = 0; i < newArr.length; i++) {
-            for (int k = 0; k < newArr[i].length; k++) {
-                newArr[i][k] = original[i][k];
+    public static int[] getAllIntsFrom(String string) {
+        return string.chars()
+                .filter(Character::isDigit)
+                .map(Character::getNumericValue)
+                .toArray();
+    }
+
+    // Maybe use arraycopy
+    public static int[][] createAndFill2dArray(int height, int width, int[] values) {
+        int[][] result = new int[height][width];
+        int index = 0;
+
+        for (int row = 0; row < height; row++) {
+            for (int column = 0; column < width; column++) {
+                result[row][column] = values[index++];
             }
         }
-        return newArr;
+        return result;
     }
 
-    public boolean biggestPosition(int colorLinePos, int colorColumnPos, String color){
-        int line = 0;
-        int column = 0;
-        for(int i = 0; i < gameMatrix.length; i++){
-            for(int k = 0; k < gameMatrix[i].length; k++){
-                if(gameMatrix[i][k].equalsIgnoreCase(color)){
-                    line = i;
-                    column = k;
-                    if(line == colorLinePos && column == colorColumnPos && numberOfJumps(gameMatrix[i]) == 1){
-                        return true;
-                    }
-                    else{
-                        return false;
-                    }
+    public static int[][] copy(int[][] original) {
+        int[][] result = new int[original.length][original[0].length];
+
+        for (int i = 0; i < original.length; i++) {
+            System.arraycopy(original[i], 0, result[i], 0, original[i].length);
+        }
+        return result;
+    }
+
+    private static int newRowIdx(int pawnRow, int moveAmount) {
+        return pawnRow - moveAmount;
+    }
+
+    private UpThrustGame copyWithMove(int pawnRow, int pawnColumn, int moveAmount) {
+        int[][] copy = copy(board);
+        copy[newRowIdx(pawnRow, moveAmount)][pawnColumn] = copy[pawnRow][pawnColumn];
+        copy[pawnRow][pawnColumn] = EMPTY_TILE;
+        return new UpThrustGame(copy, COLOR_OFFSET - myColor, getLvl() + 1);
+    }
+
+    private int numberOfPawnsInRow(int pawnRow) {
+        return (int) Arrays.stream(board[pawnRow])
+                .filter(pawn -> pawn != EMPTY_TILE)
+                .count();
+    }
+
+    private boolean isHighestPawn(int pawnRow) {
+        for (int row = 0; row < BOARD_HEIGHT; row++) {
+            for (int column = 0; column < BOARD_WIDTH; column++) {
+                if (board[row][column] != EMPTY_TILE) {
+                    if (row != pawnRow) return false;
+                    return numberOfPawnsInRow(pawnRow) == 1;
                 }
             }
         }
-        return true;
+        return false;
     }
 
-    @Override
-    public String toString() {
-       for(int i = 0; i < gameMatrix.length; i++){
-           System.out.println(Arrays.toString(gameMatrix[i]));
-       }
-       return "\n";
+    private static boolean isScoringRow(int row) {
+        return row >= 0 && row < NUMBER_OF_SCORING_ROWS;
     }
 
-
-
-    public boolean color(int lineColorPos, int colorPos, String color){
-        if(lineColorPos >= 5){
-            for(int i = 0; i < gameMatrix[lineColorPos].length; i++){
-                if(i == colorPos){
-                    continue;
-                }
-                else if(gameMatrix[lineColorPos][i].equalsIgnoreCase(color)){
-                    return false;
-                }
-            }
-        }
-        return true;
+    private boolean rowHasPieceWithColor(int row, int color) {
+        return Arrays.stream(board[row]).anyMatch(piece -> piece == color);
     }
 
-    public void printMatrix(String[][] matrix){
-        for(int i = 0; i < gameMatrix.length; i++){
-            System.out.println(Arrays.toString(gameMatrix[i]) + " line - " + i);
-        }
-        System.out.println("\n");
+    private boolean isValidMove(int pawnRow, int pawnColumn, int moveAmount) {
+        int newRow = newRowIdx(pawnRow, moveAmount);
+        if (newRow < 0) return false;
+        if (board[newRow][pawnColumn] != EMPTY_TILE) return false;
+        if (isHighestPawn(pawnRow)) return false;
+        return isScoringRow(newRow) || !rowHasPieceWithColor(newRow, board[pawnRow][pawnColumn]);
     }
-    public int numberOfJumps(String[] jumps){
-        int numberOfJumps = 0;
-        for(int i = 0; i < jumps.length; i++){
-            if(!jumps[i].equalsIgnoreCase("0")){
-                numberOfJumps++;
-            }
-        }
-        return numberOfJumps;
+
+    private int myOtherColor() {
+        return myColor + 2;
     }
+
     @Override
     public ArrayList<Move> expandAB() {
-        ArrayList<Move> possibleMoves = new ArrayList<>();
-        for (int i = 0; i < gameMatrix.length; i++) {
-            int num = numberOfJumps(gameMatrix[i]);
-            for (int k = 0; k < gameMatrix[i].length; k++) {
-                if ((isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("1"))
-                        || (isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("3"))) {
-                    if (i - num >= 0 && gameMatrix[i - num][k].equalsIgnoreCase("0")
-                            && biggestPosition(i, k, gameMatrix[i][k])) {// esqueci me de contar quantos estavam na
-                        // linha: Funciona
+        ArrayList<Move> result = new ArrayList<>();
 
-                        String[][] tempArray = copy(gameMatrix);
-                        String temp = tempArray[i - num][k];
-                        tempArray[i - num][k] = tempArray[i][k];
-                        tempArray[i][k] = temp;
-
-                        if (color(i - num, k, tempArray[i - num][k])) {
-                            printMatrix(tempArray);
-                            possibleMoves.add(new Move("" + (k+1) + " " +gameMatrix[i][k], new UpThrustGame(tempArray)));
-                        }
-                    }
-                }
-                if ((!isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("2"))
-                        || (!isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("4"))) {
-                    if (i - num >= 0 && gameMatrix[i - num][k].equalsIgnoreCase("0")
-                            && biggestPosition(i, k, gameMatrix[i][k])) {
-
-                        String[][] tempArray = copy(gameMatrix);
-                        String temp = tempArray[i - num][k];
-                        tempArray[i - num][k] = tempArray[i][k];
-                        tempArray[i][k] = temp;
-
-                        if (color(i - num, k, tempArray[i - num][k])) {
-                            possibleMoves.add(new Move("" + (k+1) + " " +gameMatrix[i][k], new UpThrustGame(tempArray)));
-                            printMatrix(tempArray);
-                        }
-                    }
+        for (int row = 0; row < BOARD_HEIGHT; row++) {
+            for (int column = 0; column < BOARD_WIDTH; column++) {
+                int pawnColor = board[row][column];
+                if (pawnColor == EMPTY_TILE) continue;
+                int moveAmount = numberOfPawnsInRow(row);
+                if ((pawnColor == myColor || pawnColor == myOtherColor()) && isValidMove(row, column, moveAmount)) {
+                    //String action = pawnColor + " " + (row + 1) + " " + (column + 1);
+                    String action = (column + 1) + " " + pawnColor;
+                    UpThrustGame game = copyWithMove(row, column, moveAmount);
+                    result.add(new Move(action, game));
                 }
             }
         }
-        return possibleMoves;
+        return result;
     }
 
+    // TODO change, largest value says which move will be played
     @Override
     public double getHeuristic() {
-        if (gameMatrix == null)
+        if (board == null)
             return 0;
         double heuristic = 0;
-        for (int l = 0; l < gameMatrix.length; l++) {
-            for (int c = 0; c < gameMatrix[l].length; c++) {
-                if (gameMatrix[l][c].equals("0"))
+        for (int l = 0; l < board.length; l++) {
+            for (int c = 0; c < board[l].length; c++) {
+                if (board[l][c] == 0)
                     continue;
                 int v = Math.max(Math.abs(l - 3), Math.abs(c - 3));
-                if (gameMatrix[l][c].equals(Integer.toString(getTurn())))
+                if (board[l][c] == getTurn())
                     heuristic += 9 - v;
                 else
                     heuristic -= 9 - v;
@@ -150,18 +141,18 @@ public class UpThrustGame extends NodeGameAB{
         }
         // testar final de jogo
         int n = 0;
-        for (int l = 0; l < gameMatrix.length; l++) {
-            for (int c = 0; c <  gameMatrix[l].length; c++) {
-                if (gameMatrix[l][c].equals(Integer.toString(getTurn())))
+        for (int[] ints : board) {
+            for (int anInt : ints) {
+                if (anInt == getTurn())
                     n++;
             }
         }
         if (n == 8)
             return WIN;
         n = 0;
-        for (int l = 0; l < gameMatrix.length; l++) {
-            for (int c = 0; c < gameMatrix[l].length; c++) {
-                if (gameMatrix[l][c].equals(Integer.toString(3-getTurn())))
+        for (int[] ints : board) {
+            for (int anInt : ints) {
+                if (anInt == 3 - getTurn())
                     n++;
             }
         }
@@ -171,65 +162,15 @@ public class UpThrustGame extends NodeGameAB{
         return heuristic;
     }
 
-    public ArrayList<UpThrustGame> successor(){
-        ArrayList<UpThrustGame> possibleSuccessors = new ArrayList<>();
-        for (int i = 0; i < gameMatrix.length; i++) {
-            int n = numberOfJumps(gameMatrix[i]);
-            for (int k = 0; k < gameMatrix[i].length; k++) {
-                if ((isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("1"))
-                        || (isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("3"))) {
-                    if (i - n >= 0 && gameMatrix[i - n][k].equalsIgnoreCase("0")
-                            && biggestPosition(i, k, gameMatrix[i][k])) {// esqueci me de contar quantos estavam na
-                        // linha: Funciona
-
-                        String[][] tempArray = copy(gameMatrix);
-                        String temp = tempArray[i - n][k];
-                        tempArray[i - n][k] = tempArray[i][k];
-                        tempArray[i][k] = temp;
-                        //printMatrizInv(tempArray);
-                        if (color(i - n, k, tempArray[i - n][k])) {// simples erro de logica: corrigido
-                            printMatrix(tempArray);
-                            possibleSuccessors.add(new UpThrustGame(tempArray));
-                        }
-                        //para fazer todos verificar antes se está ou não ativo;
-                    }
-                }
-                if ((isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("2"))
-                        || (isPlayer1 && gameMatrix[i][k].equalsIgnoreCase("4"))) {
-                    if (i - n >= 0 && gameMatrix[i - n][k].equalsIgnoreCase("0")
-                            && biggestPosition(i, k, gameMatrix[i][k])) {
-
-                        String[][] tempArray = copy(gameMatrix);
-
-                        String temp = tempArray[i - n][k];
-                        tempArray[i - n][k] = tempArray[i][k];
-                        tempArray[i][k] = temp;
-
-                        if (color(i - n, k, tempArray[i - n][k])) {
-                            possibleSuccessors.add(new UpThrustGame(tempArray));
-                            printMatrix(tempArray);
-                        }
-                    }
-                }
-            }
-        }
-        return possibleSuccessors;
+    public void setMyColor(int myColor) {
+        this.myColor = myColor;
     }
 
-
-    public String[][] getGameMatrix() {
-        return gameMatrix;
-    }
-
-    public void setGameMatrix(String[][] gameMatrix) {
-        this.gameMatrix = gameMatrix;
-    }
-
-    public boolean isPlayer1() {
-        return isPlayer1;
-    }
-
-    public void setPlayer1(boolean player1) {
-        isPlayer1 = player1;
+    @Override
+    public String toString() {
+        return "UpThrustGame{" +
+                "myColor=" + myColor +
+                ", board=" + Arrays.deepToString(board) +
+                '}';
     }
 }

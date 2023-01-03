@@ -96,7 +96,7 @@ public class UpThrustAnswer implements Runnable {
     // thread que corre em paralelo com o resto do programa
     public void run() {
         try {
-            s = new Socket("127.0.0.1", porta);
+            s = new Socket("10.180.5.81", porta);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.out.println("Impossível abrir socket");
@@ -127,7 +127,7 @@ public class UpThrustAnswer implements Runnable {
                     }
                     jt.setBackground(Color.yellow); // para avisar o jogador que � a vez dele jogar
                     jt.setEnabled(true);
-                    UpThrustGame inicial = new UpThrustGame(processaEstado(st));
+                    UpThrustGame inicial = new UpThrustGame(st); //processaEstado(st));
                     String res = inicial.processAB(jc);
                     jt.setText(res);
 //                        System.out.println(inicial.toString());
