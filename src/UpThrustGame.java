@@ -112,7 +112,6 @@ public class UpThrustGame extends NodeGameAB {
                 if (pawnColor == EMPTY_TILE) continue;
                 int moveAmount = numberOfPawnsInRow(row);
                 if ((pawnColor == myColor || pawnColor == myOtherColor()) && isValidMove(row, column, moveAmount)) {
-                    //String action = pawnColor + " " + (row + 1) + " " + (column + 1);
                     String action = (column + 1) + " " + pawnColor;
                     UpThrustGame game = copyWithMove(row, column, moveAmount);
                     result.add(new Move(action, game));

@@ -9,28 +9,29 @@ import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class UpThrustAnswer implements Runnable {
 
     private Thread t;
     private Socket s;
-    private int porta = 0xBAC0;
+    private final int port = 0xBAC0;
     private boolean run;
-    private JFrame jf;
-    private JPanel jp;
-    private JTextField jt;
-    private JTextField jv;
-    private JTextField jc;
+    private final JFrame jf;
+    private final JPanel jp;
+    private final JTextField jt;
+    private final JTextField jv;
+    private final JTextField jc;
     private BufferedReader in = null;
     private BufferedWriter out = null;
 
     public UpThrustAnswer() {
 
-        jf = new JFrame("UP - IA - MomentumAB");
+        jf = new JFrame("UP - IA - UpThrustAB");
         new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                int res = saiOuNao();
-                if (res == JOptionPane.YES_OPTION) { // confirmado ?
+                int res = confirmExit();
+                if (res == JOptionPane.YES_OPTION) { // confirm?
                     System.exit(0);
                 }
             }
@@ -43,40 +44,36 @@ public class UpThrustAnswer implements Runnable {
         jp.add(jn, BorderLayout.NORTH);
         jt = new JTextField("    ", 24);
         jn.add(jt);
-        jn.add(new JLabel("Contagem: "));
+        jn.add(new JLabel("Count: "));
         jc = new JTextField("      ", 24);
         jn.add(jc);
-        jn.add(new JLabel("Vez: "));
+        jn.add(new JLabel("Time: "));
         jv = new JTextField("  ", 3);
         jn.add(jv);
         JPanel js = new JPanel();
         jp.add(js, BorderLayout.SOUTH);
         JButton jok = new JButton("  OK  ");
-        jok.addActionListener( new ActionListener( ) {
-            public void actionPerformed(ActionEvent e) {
-                String st = jt.getText();
-                try {
-                    out.write( st+"\n");    // envia conte�do do textfield
-                    out.flush();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                System.out.println("Escreveu "+st);
-                jt.setBackground(Color.white);
-                jt.setText("");
-                jt.setEnabled(false);
-                jc.setText("");
+        jok.addActionListener(e -> {
+            String st = jt.getText();
+            try {
+                out.write( st+"\n");    // sends contents of text-field
+                out.flush();
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
+            System.out.println("Wrote "+st);
+            jt.setBackground(Color.white);
+            jt.setText("");
+            jt.setEnabled(false);
+            jc.setText("");
         });
         js.add(jok);
-        JButton jfim = new JButton("  Sair  ");
-        js.add(jfim, BorderLayout.SOUTH);
-        jfim.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                int res = saiOuNao();
-                if (res == JOptionPane.YES_OPTION) { // confirmado ?
-                    System.exit(0);
-                }
+        JButton jEnd = new JButton("  Exit  ");
+        js.add(jEnd, BorderLayout.SOUTH);
+        jEnd.addActionListener(e -> {
+            int res = confirmExit();
+            if (res == JOptionPane.YES_OPTION) { // confirm?
+                System.exit(0);
             }
         });
         run = false;
@@ -84,7 +81,7 @@ public class UpThrustAnswer implements Runnable {
         jf.setVisible(true);
     }
 
-    public void inicia() {
+    public void start() {
 
         run = true;
         jt.setEnabled(false);
@@ -93,13 +90,13 @@ public class UpThrustAnswer implements Runnable {
 
     }
 
-    // thread que corre em paralelo com o resto do programa
+    // thread that runs in parallel with the rest of the program
     public void run() {
         try {
-            s = new Socket("127.0.0.1", porta);
+            s = new Socket("127.0.0.1", port);
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.out.println("Impossível abrir socket");
+            System.out.println("Unable to open socket");
             System.exit(0);
         }
         try {
@@ -107,41 +104,41 @@ public class UpThrustAnswer implements Runnable {
             out = new BufferedWriter(new OutputStreamWriter(s.getOutputStream()));
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.out.println("Impossível abrir socket");
+            System.out.println("Unable to open socket");
             System.exit(0);
         }
-        ;
+
         System.out.println("Start run");
-        // em princ�pio corre sem parar
+        // in principle, it runs without stopping
         while (run) {
-            String st = null;
+            String st;
             try {
-                if (in.ready()) {   // h� dados para serem lidos?
+                if (in.ready()) {   // is there data to be read?
                     jt.setText("");
                     jc.setText("");
-                    st = in.readLine(); // l� uma linha (at� receber "\n")
+                    st = in.readLine(); // read a line (until you get "\n")
                     System.out.println("readLine " + st);
-                    if (st.length() < 4) { // se � curta, � o n�mero de jogador (1 ou 2)
+                    if (st.length() < 4) { // if short, the number of player (1 or 2)
                         jv.setText(st);
                         NodeGameAB.setTurn(st);
-                        continue;   // termina este ciclo e recome�a o while
+                        continue;   // ends this cycle and starts the while again
                     }
-                    jt.setBackground(Color.yellow); // para avisar o jogador que � a vez dele jogar
+                    jt.setBackground(Color.yellow); // to let the player know it is his turn to play
                     jt.setEnabled(true);
-                    UpThrustGame inicial = new UpThrustGame(st); //processaEstado(st));
-                    String res = inicial.processAB(jc);
+                    UpThrustGame initial = new UpThrustGame(st); //processState(st));
+                    String res = initial.processAB(jc);
                     jt.setText(res);
-//                        System.out.println(inicial.toString());
+//                        System.out.println(initial.toString());
 
                     String str = jt.getText();
                     try {
-                        out.write(str + "\n");   // envia conteúdo do textfield
+                        out.write(str + "\n");   // sends content of text-field
                         out.flush();
                     } catch (Exception ex) {
                         ex.printStackTrace();
                         System.exit(0);
                     }
-                    System.out.println("Escreveu auto " + str);
+                    System.out.println("Self-written " + str);
                     jt.setBackground(Color.white);
                     jt.setEnabled(false);
 
@@ -151,13 +148,13 @@ public class UpThrustAnswer implements Runnable {
                 System.exit(0);
             }
             try {
-                Thread.yield();// suspende para libertar o CPU
+                Thread.yield();// suspends to free the CPU
             } catch (Exception e) {
             }
         }
     }
 
-    public String[][] processaEstado(String st) {
+    public String[][] processState(String st) {
         String[] v = st.trim().split(" ");
         String[][] s = new String[11][4];
         for (int l = 0; l < 11; l++) {
@@ -166,7 +163,7 @@ public class UpThrustAnswer implements Runnable {
                     s[l][c] = v[l * 4 + c];
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    System.out.println("tab " + v + "  l " + l + "  c " + c);
+                    System.out.println("tab " + Arrays.toString(v) + "  l " + l + "  c " + c);
                 }
             }
         }
@@ -178,14 +175,14 @@ public class UpThrustAnswer implements Runnable {
     }
 
     /**
-     * Dilogo que pede confirmao para terminar a aplicao
+     * Dialog asking for confirmation to end the application
      *
-     * @return um int indicando a opo seleccionada pelo utilizador
+     * Return an int indicating the option selected by the user
      */
-    protected int saiOuNao() {
+    protected int confirmExit() {
         return JOptionPane.showConfirmDialog(
                 null,
-                " Confirma o fim do programa ? ",
+                " Do you confirm the end of the program? ",
                 " UP - IA - Dao ",
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE);
@@ -196,7 +193,7 @@ public class UpThrustAnswer implements Runnable {
      */
     public static void main(String[] args) {
         UpThrustAnswer r = new UpThrustAnswer();
-        r.inicia();
+        r.start();
 
     }
 
