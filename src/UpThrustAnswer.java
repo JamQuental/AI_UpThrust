@@ -1,7 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -93,7 +91,7 @@ public class UpThrustAnswer implements Runnable {
     // thread that runs in parallel with the rest of the program
     public void run() {
         try {
-            s = new Socket("127.0.0.1", port);
+            s = new Socket("10.180.5.81", port); // 127.0.0.1
         } catch (Exception ex) {
             ex.printStackTrace();
             System.out.println("Unable to open socket");
